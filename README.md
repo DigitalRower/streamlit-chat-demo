@@ -6,7 +6,7 @@ Streamlit + Claude chatbot for explaining Python code. Multi-turn conversation w
 
 ## Live demo
 
-Base URL: `https://app-chat-demo.streamlit.app/`
+Base URL: [`https://app-chat-demo.streamlit.app/`](https://app-chat-demo.streamlit.app/)
 
 > **Note on cold starts:** The free tier sleeps after 1 hour 
 > of inactivity. First request after idle takes 30–60 seconds. 
