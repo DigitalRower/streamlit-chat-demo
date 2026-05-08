@@ -2,6 +2,10 @@
 
 Streamlit + Claude chatbot for explaining Python code. Multi-turn conversation with few-shot and structured output patterns.
 
+![Code Explainer demo screenshot](./assets/streamlit-chat-demo.png)
+
+*Claude explaining a Python list comprehension line-by-line with a TL;DR summary.*
+
 ---
 
 ## Live demo
@@ -11,6 +15,7 @@ Base URL: [`https://app-chat-demo.streamlit.app/`](https://app-chat-demo.streaml
 > **Note on cold starts:** The free tier sleeps after 1 hour 
 > of inactivity. First request after idle takes 30–60 seconds. 
 > Subsequent requests respond in 2–6 seconds.
+
 ---
 
 ## What it does
@@ -21,8 +26,56 @@ Base URL: [`https://app-chat-demo.streamlit.app/`](https://app-chat-demo.streaml
 - Session state for conversation persistence
 - Error handling for API failures
 
+---
 
-![Code Explainer demo screenshot](./assets/streamlit-chat-demo.png)
+## How it works
+
+**Session management:** Streamlit's `st.session_state` persists the conversation history across app reruns. Each user message appends to the history, which is sent to Claude in full on each request (capped at 20 turns to prevent cost runaway and context window overflow).
+
+**Error handling:** API failures (network timeouts, rate limits) are caught and displayed as red banners in the UI, with conversation history rolled back to prevent orphaned user turns.
+
+**System prompt design:** The app uses a code explainer persona — Claude is 
+instructed to explain code line-by-line in plain English, with a TL;DR summary 
+at the end. The persona was chosen because it naturally produces structured output 
+(one explanation per line), makes few-shot examples easy to write, and is 
+immediately recognizable as developer tooling to potential clients. The system 
+prompt is defined as a module-level constant (`SYSTEM_PROMPT`) so it can be 
+versioned and swapped without touching application logic.
+
+---
+
+## Implementation highlights
+
+- Few-shot prompting added for consistent output format
+- History capped at 20 turns to prevent cost runaway
+- Session state replay loop explains how Streamlit reruns work
+- Structured output ensures line-by-line + TL;DR format
+
+---
+
+## Prompt patterns
+
+**Few-shot prompting:** The system prompt includes two example input/output pairs 
+that demonstrate the desired response format. Claude infers the pattern from these 
+examples and applies it to new inputs — producing consistent formatting without 
+relying on lengthy verbal instructions alone.
+
+**Structured output:** A format constraint explicitly instructs Claude to always 
+respond with: (1) the code line or expression, (2) an indented plain-English 
+explanation, (3) a TL;DR summary at the end. This ensures responses are 
+predictable regardless of input complexity.
+
+**Why both together:** Few-shot examples show Claude what the output should look 
+like. Structured output instructions tell Claude what it must include. Using both 
+produces more consistent results than either pattern alone.
+
+---
+
+## Limitations
+
+- History cap means conversations (20+ turns) will forget older context
+- Code explanations are concise; very long snippets may be truncated
+- Streamlit Community Cloud free tier sleeps after 1 hour inactivity
 
 ---
 
@@ -36,9 +89,23 @@ Dependencies are listed in `requirements.txt`. See [Tech stack](#tech-stack) bel
 
 ---
 
+## Quick start
+
+After setup, run:
+
+    streamlit run src/app.py
+
+Server starts at `http://localhost:8501/`
+
+Paste this snippet to test immediately:
+
+    squares = [x**2 for x in range(10) if x % 2 == 0]
+
+Press Enter. Claude explains it line-by-line with a TL;DR.
+
+---
+
 ## Local setup
-
-
 
 **Clone and enter the project:**
 
@@ -47,7 +114,6 @@ Dependencies are listed in `requirements.txt`. See [Tech stack](#tech-stack) bel
     git clone git@github.com:digitalrower/streamlit-chat-demo.git
 
     cd streamlit-chat-demo
-
 
 **Pin Python version (requires pyenv):**
 
@@ -71,51 +137,6 @@ Dependencies are listed in `requirements.txt`. See [Tech stack](#tech-stack) bel
 Open `.env` and replace the placeholder with your actual Anthropic API key:
 
     ANTHROPIC_API_KEY=your_actual_api_key_here
-
-
----
-
-## Quick start
-
-After setup, run:
-
-    streamlit run src/app.py
-
-Server starts at `http://localhost:8501/`
-
-Paste a Python snippet into the chat input:
-
-    squares = [x**2 for x in range(10) if x % 2 == 0]
-
-Press Enter. Claude explains the code line-by-line with a TL;DR.
-
-
----
-
-## Implementation highlights
-
-- Few-shot prompting added for consistent output format
-- History capped at 20 turns to prevent cost runaway
-- Session state replay loop explains how Streamlit reruns work
-- Structured output ensures line-by-line + TL;DR format
-
----
-
-## Limitations
-
-- History cap means conversations (20+ turns) will forget older context
-- Code explanations are concise; very long snippets may be truncated
-- Streamlit Community Cloud free tier sleeps after 1 hour inactivity
-
----
-
-## How it works
-
-The app uses **few-shot prompting** to teach Claude a consistent response format through examples rather than instructions alone. The system prompt includes example code explanations, which Claude uses as a template for all subsequent responses.
-
-**Session management:** Streamlit's `st.session_state` persists the conversation history across app reruns. Each user message appends to the history, which is sent to Claude in full on each request (capped at 20 turns to prevent cost runaway and context window overflow).
-
-**Error handling:** API failures (network timeouts, rate limits) are caught and displayed as red banners in the UI, with conversation history rolled back to prevent orphaned user turns.
 
 ---
 
