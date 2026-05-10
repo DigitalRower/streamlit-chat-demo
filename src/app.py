@@ -48,13 +48,16 @@ def ask_claude(messages: list) -> str:
     Raises APIError on Anthropic API failures - caller should handle. 
     """
     recent_messages = messages[-HISTORY_CAP:]
-    response = client.messages.create(
+
+    full_response = ""
+    with client.messages.stream(
         model="claude-haiku-4-5-20251001",
         max_tokens=1500,
         system=SYSTEM_PROMPT,
         messages=recent_messages,
-    )
-    return response.content[0].text
+    ) as stream:
+        # stream.text_stream yields text deltas; join them into full response
+        return "".join(stream.text_stream)
 
 # Streamlit UI
 st.title("Code Explainer")
