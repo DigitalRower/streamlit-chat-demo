@@ -5,8 +5,6 @@ from anthropic import APIError, APIConnectionError, APITimeoutError
 
 load_dotenv() # reads .env from current directory
 
-client = Anthropic() # reads ANTHROPIC_API_KEY from env automatically
-
 SYSTEM_PROMPT = """You are a code explainer. When the user pastes code,
 explain it line by line in plain English. Be concise — no preamble,
 no "Sure! Here's the explanation." Just the explanation itself.
@@ -45,11 +43,13 @@ HISTORY_CAP = 20
 
 def ask_claude(messages: list) -> str:
     """Send full conversation history to Claude, return assistant text.
-    Raises APIError on Anthropic API failures - caller should handle. 
+    Raises APIError on Anthropic API failures - caller should handle.
     """
+    client = Anthropic()
     recent_messages = messages[-HISTORY_CAP:]
+    if recent_messages and recent_messages[0]["role"] == "assistant":
+        recent_messages = recent_messages[1:]
 
-    full_response = ""
     with client.messages.stream(
         model="claude-haiku-4-5-20251001",
         max_tokens=1500,

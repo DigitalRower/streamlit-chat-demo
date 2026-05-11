@@ -6,9 +6,10 @@ dist/
 build/
 *.egg-info/
 
-# Virtual environment
+# --- Virtual environment/Dependencies ---
 .venv/
 venv/
+node_modules/
 
 # --- OS / IDE files ---
 .DS_Store
