@@ -20,17 +20,19 @@ Base URL: [`https://app-chat-demo.streamlit.app/`](https://app-chat-demo.streaml
 
 ## What it does
 
-- Multi-turn conversation with Claude
+- Multi-turn conversation with Claude with streaming responses
 - Few-shot prompting for consistent formatting
 - Structured output with TL;DR summaries
 - Session state for conversation persistence
-- Error handling for API failures
+- Error handling for API failures with automatic history rollback
 
 ---
 
 ## How it works
 
 **Session management:** Streamlit's `st.session_state` persists the conversation history across app reruns. Each user message appends to the history, which is sent to Claude in full on each request (capped at 20 turns to prevent cost runaway and context window overflow).
+
+**Streaming responses:** The app uses `client.messages.stream()` with the Anthropic SDK instead of a blocking `create()` call. The full response is accumulated via `"".join(stream.text_stream)` and stored to session state only after the stream completes — ensuring conversation history always contains complete responses, not partial ones.
 
 **Error handling:** API failures (network timeouts, rate limits) are caught and displayed as red banners in the UI, with conversation history rolled back to prevent orphaned user turns.
 
@@ -48,6 +50,8 @@ versioned and swapped without touching application logic.
 
 - Few-shot prompting added for consistent output format
 - History capped at 20 turns to prevent cost runaway
+- Streaming responses via `client.messages.stream()` — tokens arrive in ~300ms vs 3–8s blocking
+- Guard against malformed history: strips leading assistant turns before sending to API
 - Session state replay loop explains how Streamlit reruns work
 - Structured output ensures line-by-line + TL;DR format
 
@@ -76,6 +80,8 @@ produces more consistent results than either pattern alone.
 - History cap means conversations (20+ turns) will forget older context
 - Code explanations are concise; very long snippets may be truncated
 - Streamlit Community Cloud free tier sleeps after 1 hour inactivity
+- Streaming complicates error handling mid-response — partial output may 
+  briefly appear before an error banner replaces it
 
 ---
 
